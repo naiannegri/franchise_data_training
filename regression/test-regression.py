@@ -25,17 +25,17 @@ from sklearn.metrics import classification_report
 
 ##LogisticRegression(): 92% acurácia
 df_train = pd.read_csv("dataWorkstyle-training.csv") 
-df_test = pd.read_csv("dataWorkstyle-test.csv") 
+df_test = pd.read_csv("user-response-test.csv") 
 
-X = df_train[['sector','investmentStart','returnTime','workStyle','companySize','faturamentoMedio','capitalInstalacao','taxaFranquia','capital_needed','prazo']]
+X = df_train[['investmentStart','returnTime','workStyle','companySize','capitalInstalacao','totalUnits']]
 y = df_train['company'] 
 
 X_norm =(X-X.mean())/X.std()
 
-model = linear_model.LogisticRegression().fit(X_norm, y)
+model = linear_model.LogisticRegression().fit(X_norm, y[2,1,1,1,1,1])
 result = model.score(X_norm, y)
 
-X_test = df_test[['sector','investmentStart','returnTime','workStyle','companySize','faturamentoMedio','capitalInstalacao','taxaFranquia','capital_needed','prazo']]
+X_test = df_test[['investmentStart','returnTime','workStyle','companySize','capitalInstalacao','totalUnits']]
 X_test_norm =(X_test-X_test.mean())/X_test.std()
 
 y_test = model.predict(X_test_norm)

@@ -1,0 +1,47 @@
+[{
+  "investmentStart": 100000,
+  "returnTime": 24,
+  "workStyle": 2,
+  "companySize": 1,
+  "capitalInstalacao": 20000,
+  "totalUnits": 10
+},
+{
+  "investmentStart": 50000,
+  "returnTime": 36,
+  "workStyle": 2,
+  "companySize": 2,
+  "capitalInstalacao": 5000,
+  "totalUnits": 10
+},
+{
+  "investmentStart": 250000,
+  "returnTime": 36,
+  "workStyle": 1,
+  "companySize": 0,
+  "capitalInstalacao": 50000,
+  "totalUnits": 500
+},
+{
+  "investmentStart": 80000,
+  "returnTime": 24,
+  "workStyle": 2,
+  "companySize": 1,
+  "capitalInstalacao": 5000,
+  "totalUnits": 30
+},
+{
+  "investmentStart": 300000,
+  "returnTime": 48,
+  "workStyle": 2,
+  "companySize": 2,
+  "capitalInstalacao": 80000,
+  "totalUnits": 300
+},{
+  "investmentStart": 150000,
+  "returnTime": 12,
+  "workStyle": 2,
+  "companySize": 1,
+  "capitalInstalacao": 20000,
+  "totalUnits": 100
+}]
