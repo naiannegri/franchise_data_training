@@ -3,11 +3,27 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math, warnings
-from sklearn import linear_model
+from sklearn import linear_model, naive_bayes, svm, model_selection
 from sklearn.neighbors import NearestNeighbors
 import pandas as pd
 import seaborn as sn
+from sklearn.metrics import classification_report
 
+
+
+##RidgeClassifier(): 80% acurácia
+#model = linear_model.RidgeClassifier().fit(X_norm, y) 
+
+##GaussianNB(): 92% acurácia
+# Naive_Bayes = naive_bayes.GaussianNB()
+# Naive_Bayes.fit(X_norm, y)
+# X_test = df_test[['sector','investmentStart','returnTime','workStyle','companySize','faturamentoMedio','capitalInstalacao','taxaFranquia','capital_needed','prazo']]
+# X_test_norm =(X_test-X_test.mean())/X_test.std()
+# prediction_results = Naive_Bayes.predict(X_test_norm)  
+# print(prediction_results)
+
+
+##LogisticRegression(): 92% acurácia
 df_train = pd.read_csv("dataWorkstyle-training.csv") 
 df_test = pd.read_csv("dataWorkstyle-test.csv") 
 
@@ -16,21 +32,57 @@ y = df_train['company']
 
 X_norm =(X-X.mean())/X.std()
 
-model = linear_model.RidgeClassifier().fit(X_norm, y)
+model = linear_model.LogisticRegression().fit(X_norm, y)
 result = model.score(X_norm, y)
-
-
-
-print(result)
 
 X_test = df_test[['sector','investmentStart','returnTime','workStyle','companySize','faturamentoMedio','capitalInstalacao','taxaFranquia','capital_needed','prazo']]
 X_test_norm =(X_test-X_test.mean())/X_test.std()
 
 y_test = model.predict(X_test_norm)
+valid_x_df = pd.DataFrame(X_test_norm)
+valid_y_df = pd.DataFrame(y_test)
 
-print(y_test)
+def get5bestMatch(classifier, X_test_norm,valid_y_df,valid_x_df):
+    n=5
 
-# print(y_test)
+    probas = model.predict_proba(X_test_norm)
+
+    top_n_predictions = np.argsort(probas, axis = 1)[:,-n:]
+
+    top_class = model.classes_[top_n_predictions]
+
+    top_class_df = pd.DataFrame(data=top_class)
+    results = pd.merge(valid_y_df, valid_x_df, left_index=True, right_index=True)
+    results = pd.merge(results, top_class_df, left_index=True, right_index=True)
+
+
+    print(results)
+get5bestMatch(model,X_test_norm,valid_y_df,valid_x_df)
+
+
+# y_test = model.predict(X_test_norm)
+
+# matrix = model.predict_proba(X_test_norm)
+
+# print("Matrix Lines:", len(matrix))
+# print("Matrix Columns:", len(matrix[0]))
+# # print(y_test)
+# # print(model.predict_proba(X_test_norm))
+
+
+# print("")
+
+# index = 0
+# print("X_test:", list(X_test.iloc[:index])) ## FIX THIS
+# print("y_test:", y_test[index])
+# print("matrix:", matrix[index])
+
+# correlation = matrix.corr()
+# plot = sn.heatmap(correlation) #, annot = True, fmt=".1f", linewidths=.6)
+
+# cr = classification_report(y, y_test)
+# print(cr)
+
 
 # X1 = df_userInput[['workStyle','sector','investmentStart','returnTime','faturamentoMedio','capitalInstalacao']]
 
