@@ -5,6 +5,11 @@ import { AppService } from './app.service';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
+  @Get("/getInitialData")
+  getInitialData() {
+    return this.appService.getDetails();
+  }
+
   @Get("/getDetails")
   getDetails() {
     return this.appService.getDetails();
@@ -30,4 +35,10 @@ export class AppController {
   async getConnect() {
     return this.appService.connect();
   }
+  
+  @Get("/hello")
+  async getHello() {
+    return this.appService.getHello();
+  }
 }
+

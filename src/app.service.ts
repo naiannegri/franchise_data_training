@@ -19,11 +19,12 @@ export class AppService implements OnModuleInit
   private browser;
   private page;
   private specificPage;
-  
+
   async onModuleInit(){
     await this.connect();
   }
-  async openBrowser() {
+
+  async initialData() {
     this.page = await this.browser.newPage();
     await this.page.goto('https://www.portaldofranchising.com.br/');
     await this.page.waitForSelector('#form');
@@ -537,4 +538,9 @@ console.log("JSON data is saved.");
     defaultViewport: null,
     });
   }
+
+  getHello() {
+    new Promise((resolve) => setTimeout(resolve, 5000));
+    return 'Hello World!';
+}
   }
