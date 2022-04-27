@@ -18,10 +18,101 @@ export class AppService implements OnModuleInit
  {
   private browser;
   private page;
+  private specificPage;
+  
   async onModuleInit(){
     await this.connect();
   }
-
+  async openBrowser() {
+    this.page = await this.browser.newPage();
+    await this.page.goto('https://www.portaldofranchising.com.br/');
+    await this.page.waitForSelector('#form');
+    const texts = await this.page.$$eval('#form option', divs => divs.map(({ value }) => value));
+    this.specificPage = await this.browser.newPage();
+    texts.length = 17;
+    texts.shift();
+    let allNames = [];
+    let allLinks = [];
+    let allSectors = [];
+    let allLogosLink = [];
+    let allDescription = [];
+    let allValues = [];
+    const arrayAll = [{}];
+    for (var prop in texts) {
+        await this.specificPage.goto(texts[prop]);
+        await new Promise(resolve => { setTimeout(resolve, 20000); });
+        let companiesName = await this.specificPage.$$eval('.card-title', divs => divs.map(({ innerText }) => innerText));
+        let companiesSector = await this.specificPage.$$eval('.main-title', divs => divs.map(({ innerText }) => innerText));
+        let linkCompanies = await this.specificPage.$$eval('.card-body a', divs => divs.map(({ href }) => href));
+        await this.specificPage.waitForSelector(".franquia-container-image");
+        let logoLink = await this.specificPage.$$eval('.franquia-container-image img[src]', imgs => imgs.map(img => img.getAttribute('src')));
+        let descriptions = await this.specificPage.$$eval('.card-text', divs => divs.map(({ innerText }) => innerText));
+        let values = await this.specificPage.$$eval('.investment-values', divs => divs.map(({ innerText }) => innerText));
+        await allSectors.push(companiesSector);
+        await allLogosLink.push(logoLink);
+        await allNames.push(companiesName);
+        await allLinks.push(linkCompanies);
+        await allDescription.push(descriptions);
+        await allValues.push(values);
+    }
+    let splitRange = [];
+    allNames = await allNames.filter(items => items);
+    allLinks = await allLinks.filter(items => items);
+    allDescription = await allDescription.filter(items => items);
+    allValues = await allValues.filter(items => items);
+    allLogosLink = await allLogosLink.filter(items => items);
+    for (var i = 0; i < allNames.length; i++) {
+        let attSectors = allSectors[i][0];
+        let attLinks = await allLinks[i].filter(items => items);
+        let attNames = await allNames[i].filter(items => items);
+        let attDescription = await allDescription[i].filter(items => items);
+        let attValues = await allValues[i].filter(items => items);
+        let attLogosLink = await allLogosLink[i].filter(items => items);
+        attNames = await [...new Set(attNames)];
+        attLinks = await [...new Set(attLinks)];
+        attDescription = await [...new Set(attDescription)];
+        attValues = await [...new Set(attValues)];
+        attLogosLink = await [...new Set(attLogosLink)];
+        for (var j = 0; j < attNames.length; j++) {
+            try {
+                splitRange = attValues[j].split("a");
+                console.log(splitRange.length);
+                arrayAll.push({
+                    "company": attNames[j],
+                    "sector": attSectors,
+                    "imageUrl": attLogosLink[j],
+                    "pageUrl": attLinks[j],
+                    "Description": attDescription[j],
+                    "investmentStart": splitRange[0],
+                    "investmentEnd": splitRange[1]
+                });
+            }
+            catch (e) { }
+            ;
+            if (splitRange.length <= 1) {
+                arrayAll.push({
+                    "company": attNames[j],
+                    "sector": attSectors,
+                    "imageUrl": attLogosLink[j],
+                    "pageUrl": attLinks[j],
+                    "Description": attDescription[j],
+                    "totalInvestment": attValues[j]
+                });
+            }
+        }
+        splitRange = [];
+    }
+    ;
+    var data = JSON.stringify(arrayAll);
+    var fs = require('fs');
+    fs.writeFile('user.json', data, (err) => {
+        if (err) {
+            throw err;
+        }
+        console.log("JSON data is saved.");
+    });
+    return "teste";
+}
    async getDetails(){
     this.page = await this.browser.newPage();
     let allNewData = []
