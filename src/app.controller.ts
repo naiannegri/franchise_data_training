@@ -5,9 +5,9 @@ import { AppService } from './app.service';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get("/getInitialData")
+  @Get("/initialData")
   getInitialData() {
-    return this.appService.getDetails();
+    return this.appService.initialData();
   }
 
   @Get("/getDetails")
@@ -30,12 +30,22 @@ export class AppController {
     return this.appService.getMoreDataNecessary();
   }
 
+  @Get("/allOtherData")
+  async allOtherData() {
+    return this.appService.allOtherData();
+  }
+  
+  @Get("/getDateAndProfile")
+  async getDateAndProfile() {
+    return this.appService.getDateAndProfile();
+  }
 
   @Get("/connect")
   async getConnect() {
     return this.appService.connect();
   }
   
+
   @Get("/hello")
   async getHello() {
     return this.appService.getHello();

@@ -5,6 +5,7 @@ import exportFromJSON from 'export-from-json'
 //const puppeteer = require('puppeteer')
 const puppeteer = require('puppeteer-extra')
 const StealthPlugin = require('puppeteer-extra-plugin-stealth')
+var fs = require("fs");
 puppeteer.use(StealthPlugin())
 
 const AdblockerPlugin = require("puppeteer-extra-plugin-adblocker");
@@ -19,6 +20,7 @@ export class AppService implements OnModuleInit
   private browser;
   private page;
   private specificPage;
+  private content;
 
   async onModuleInit(){
     await this.connect();
@@ -450,7 +452,7 @@ if (err) {
     throw err;
 }
 console.log("JSON data is saved.");
-})
+});
 
 //PEGA DADOS RECEITA
 //   const allPresentData = require('../companiesAtt.json')
@@ -530,6 +532,338 @@ console.log("JSON data is saved.");
 
 
 
+//CRIEI OUTRA ROTA PARA PEGAR OS DADOS DAS EMPRESAS FALTANTES DIRETO DO SITE DA ABF. PULEI O SITE FRANCHISINGBOOK E PEGUEI AS INFOS DIRETO DA ABF.
+ async allOtherData() {
+  let failList = []
+  let companiesAtt = [{}];
+  this.content = fs.readFileSync('empresas-presentes-evento.txt','utf8')
+  this.content = this.content.split("\n") 
+  this.page = await this.browser.newPage(); 
+  for(var i = 0; i < this.content.length ; i++){
+    var valueSearch;
+    var faturamentoMedio = 0;
+    var capitalInstalacao = 0;
+    var taxaFranquia = 0;
+    var totalArea = 0;
+    var totalFuncionarios = 0;
+    var taxaPropaganda = 0;
+    var taxaRoyalties = 0;
+    var propaganda
+    var royalties
+    var taxasIncidemSobre
+    valueSearch = this.content[i];
+    try{
+    await this.page.goto('https://franquias.portaldofranchising.com.br/busca');
+    await new Promise(resolve => {setTimeout(resolve, 3500)});
+    await this.page.type("#franchise-results > div > div:nth-child(2) > div > div > input", `${valueSearch}`);
+    await this.page.keyboard.press("Enter");
+    await new Promise(resolve => {setTimeout(resolve, 3500)});
+    await this.page.click("#Empresas > div:nth-child(2) > ol > li > a > div")
+    await new Promise(resolve => {setTimeout(resolve, 15000)});
+
+      try{
+
+
+        let companiesInvestment = await this.page.$$eval('.non-advertiser-investment p',
+        divs => divs.map(({ innerText }) => innerText));
+        companiesInvestment = companiesInvestment[0].split('a partir de R$')
+
+        let companiesSector = await this.page.$$eval('body > div > div:nth-child(1) > div > div.col-xl-8.col-12.mt-5 > div:nth-child(4) > div > div > span:nth-child(2)',
+        divs => divs.map(({ innerText }) => innerText));
+        
+        let totalUnits = await this.page.$$eval("body > div > div:nth-child(1) > div > div.col-xl-8.col-12.mt-5 > div.row.mt-4 > div.col-9 > div > div.non-advertiser-units > p > span",
+        divs => divs.map(({ innerText }) => innerText));
+        
+      companiesAtt.push({
+      "company": valueSearch, 
+      "sector": companiesSector[0],
+      "investmentStart": companiesInvestment[1],
+      "returnTime": 0,
+      "totalUnits": totalUnits[0],
+      })
+      console.log('\n')
+      console.log(valueSearch,companiesSector[0],companiesInvestment[1],)
+      console.log('\n')
+
+}catch(e){
+  console.log(e)
+  console.log("\n")
+  console.log("1 - ERRO")
+  console.log(valueSearch)
+}
+
+  try{
+
+
+    let textInvestment = await this.page.$$eval('.p-title-default',
+    divs => divs.map(({ innerText }) => innerText));
+    if ((textInvestment[textInvestment.length - 1]) == "SELO DE EXCELÊNCIA EM FRANCHISING"){
+      textInvestment.pop()
+    }
+
+   // console.log(textInvestment)
+    let valueInvestment = await this.page.$$eval('.bold-default',
+    divs => divs.map(({ innerText }) => innerText));
+    let minInvestment = valueInvestment[0].split('a partir de R$')
+
+
+    let sector = await this.page.$$eval('#leftColMinisite > div > div > div.tab-content.about > span',
+    divs => divs.map(({ innerText }) => innerText));
+
+    let infoCompany = await this.page.$$eval("#leftColMinisite > div > div > div:nth-child(2) > div > div:nth-child(1) > p",
+    divs => divs.map(({ innerText }) => innerText));
+
+    let allInfo = await this.page.$$eval('#bold',
+    divs => divs.map(({ innerText }) => innerText));
+
+    let moreInfo = await this.page.$$eval('p.content',
+    divs => divs.map(({ innerText }) => innerText));
+
+    if (infoCompany[0] == "Investimento para um Quiosque"){
+      var typeCompany = "quiosque"
+      capitalInstalacao = allInfo[0]
+      taxaFranquia = allInfo[1]
+      if (moreInfo[1].includes("R$")){
+        faturamentoMedio = moreInfo[1]
+
+        totalArea = moreInfo[4]
+
+        totalFuncionarios = moreInfo[5]
+
+        propaganda = moreInfo[6]
+
+        royalties = moreInfo[8]
+
+        taxasIncidemSobre = moreInfo[7]
+      } else {
+        totalArea = moreInfo[3]
+
+        totalFuncionarios = moreInfo[4]
+
+        propaganda = moreInfo[5]
+
+        royalties = moreInfo[7]
+        taxasIncidemSobre = moreInfo[6]
+
+        // totalArea = moreInfo[3].split('m²') 
+        // totalArea = totalArea[0].split('\n')
+        // totalArea = totalArea[1].split(' ')
+
+        // totalFuncionarios = moreInfo[4].split('\n')
+        // totalFuncionarios = totalFuncionarios[1].split('de ')
+        // totalFuncionarios = totalFuncionarios[1].split(' a ')
+
+        // propaganda = moreInfo[5].split('\nde ')
+        // propaganda = propaganda[0].split('\n')
+        // taxaPropaganda = propaganda[1]
+
+        // royalties = moreInfo[7].split('\nde ')
+        // royalties = royalties[0].split('\n')
+        // taxasIncidemSobre = moreInfo[6].split('\n')
+        // taxasIncidemSobre = taxasIncidemSobre[1].split('                                        ')
+      }
+
+    } else if (infoCompany[0] == "Investimento para uma Loja"){
+      var typeCompany = "loja"
+      capitalInstalacao = allInfo[0]
+      taxaFranquia = allInfo[1]
+      if (moreInfo[1].includes("R$")){
+        faturamentoMedio = moreInfo[1]
+
+        totalArea = moreInfo[4]
+
+        totalFuncionarios = moreInfo[5]
+
+        propaganda = moreInfo[6]
+        console.log(moreInfo[6])
+        royalties = moreInfo[8]
+        taxasIncidemSobre = moreInfo[7]
+
+        // taxasIncidemSobre = moreInfo[7].split('\n')
+        // taxasIncidemSobre = taxasIncidemSobre[1].split('                                        ')
+        console.log(faturamentoMedio,totalArea,totalFuncionarios,propaganda,taxasIncidemSobre)
+
+      } else {
+        totalArea = moreInfo[3]
+
+        totalFuncionarios = moreInfo[4]
+
+        propaganda = moreInfo[5]
+
+        royalties = moreInfo[7]
+
+        taxasIncidemSobre = moreInfo[6]
+      }
+    }
+
+    if (textInvestment.length == 4) {
+      companiesAtt.push({
+        "company": valueSearch,
+        "typeCompany": typeCompany,
+        "sector": sector[0],
+        "investmentStart": minInvestment[1],
+        "returnTime": valueInvestment[1],
+        "totalUnits": valueInvestment[2],
+        "totalFuncionarios": totalFuncionarios,
+        "totalArea": totalArea,
+        "faturamentoMedio": faturamentoMedio,
+        "capitalInstalacao": capitalInstalacao,
+        "taxaPropaganda": propaganda,
+        "taxaRoyalties": royalties,
+        "taxasIncidemSobre": taxasIncidemSobre,
+        "personalidade": 1
+      })
+    }
+
+    else if((textInvestment.length == 5)){
+      companiesAtt.push({
+        "company": valueSearch,
+        "typeCompany": typeCompany,
+        "sector": sector[0],
+        "investmentStart": minInvestment[1],
+        "returnTime": valueInvestment[1],
+        "totalUnits": valueInvestment[3],
+        "totalFuncionarios": totalFuncionarios,
+        "totalArea": totalArea,
+        "faturamentoMedio": faturamentoMedio,
+        "capitalInstalacao": capitalInstalacao,
+        "taxaPropaganda": propaganda,
+        "taxaRoyalties": royalties,
+        "taxasIncidemSobre": taxasIncidemSobre,
+        "personalidade": 1
+      })
+    }
+    console.log('\n')
+    console.log(valueSearch,sector[0],minInvestment,valueInvestment,totalFuncionarios,totalArea)
+    console.log('\n')
+  }catch(e){
+    console.log(e)
+    console.log("\n")
+    console.log("2 - ERRO")
+    console.log(valueSearch)
+  }
+ }catch(e){
+  console.log(e)
+  console.log('\n')
+  console.log(valueSearch)
+  console.log('\n')
+  failList.push(valueSearch)
+}} 
+ var data = JSON.stringify(companiesAtt);
+fs.writeFile('companiesAtt-before.json', data, (err) => {
+  if (err) {
+      throw err;
+  }
+  console.log("SUCESS data is saved.");
+});
+var data = JSON.stringify(failList);
+fs.writeFile('failData.json', data, (err) => {
+  if (err) {
+      throw err;
+  }
+  console.log("FAIL data is saved.");
+});
+}
+
+
+
+//PEGA DADOS DA DATA DE FUNDAÇAO DA FRANQUIA, DESCRIÇÃO E PERFILDOFRANQUEADO
+async getDateAndProfile() {
+
+  var dateOpening = ['']
+  var description = ['']
+
+  
+  const allPresentData = require('../companiesAtt-before.json')
+  let companiesAtt = []
+  companiesAtt.push(allPresentData)
+  let valueSearch = ""
+  this.page = await this.browser.newPage();
+
+  for(var i = 0; i < companiesAtt[0].length ; i++){
+    var perfilFranqueado = ['']
+    valueSearch = companiesAtt[0][i].company;
+    try{
+      
+    await this.page.goto('https://franquias.portaldofranchising.com.br/busca');
+    await new Promise(resolve => {setTimeout(resolve, 3500)});
+    await this.page.type("#franchise-results > div > div:nth-child(2) > div > div > input", `${valueSearch}`);
+    await this.page.keyboard.press("Enter");
+    await new Promise(resolve => {setTimeout(resolve, 3500)});
+    await this.page.click("#Empresas > div:nth-child(2) > ol > li > a > div")
+    await new Promise(resolve => {setTimeout(resolve, 15000)});
+
+    try{
+
+        dateOpening = await this.page.$$eval("body > div > div:nth-child(1) > div > div:nth-child(2) > div:nth-child(6) > div:nth-child(1) > div > p:nth-child(2) > span",
+        divs => divs.map(({ innerText }) => innerText));
+
+        description = await this.page.$$eval("body > div > div:nth-child(1) > div > div:nth-child(2) > div:nth-child(4) > div > div > span:nth-child(6)",
+        divs => divs.map(({ innerText }) => innerText));
+
+          companiesAtt[0][i]["dateOfOpening"] = dateOpening[0]
+
+          companiesAtt[0][i]["Description"] = description[0]
+
+          companiesAtt[0][i]["perfilFranqueado"] = perfilFranqueado[0]
+          
+        console.log(companiesAtt[0][i])
+      } catch (e) {
+        console.log(e)
+        console.log("\n")
+        console.log("1 - ERRO")
+        console.log(valueSearch)
+      }
+
+      // var dateOpening = ['']
+      // var perfilFranqueado = ['']
+      // var description = ['']    
+      try {
+        // let dateOpening = await this.page.$$eval('#leftColMinisite > div > div > div.tab-content.about > span',
+        // divs => divs.map(({ innerText }) => innerText));
+
+        if (dateOpening.length == 0) {
+          companiesAtt[0][i]["dateOfOpening"] = ""
+        }
+
+        if (description.length == 0){
+          description = await this.page.$$eval("#leftColMinisite > div > div > div:nth-child(1) > div:nth-child(6) > div > div",
+          divs => divs.map(({ innerText }) => innerText));
+          companiesAtt[0][i]["Description"] = description[0]
+  
+        } 
+          perfilFranqueado = await this.page.$$eval("#leftColMinisite > div > div > div:nth-child(1)",
+          divs => divs.map(({ innerText }) => innerText));
+          if (perfilFranqueado.length != 0){
+            companiesAtt[0][i]["perfilFranqueado"] = perfilFranqueado[0]
+          }
+          console.log(companiesAtt[0][i])
+        
+
+
+      } catch(e){
+        console.log(e)
+        console.log("\n")
+        console.log("2 - ERRO")
+        console.log(valueSearch)
+      }
+      
+      } catch (e) {
+        console.log(e)
+} 
+
+}
+
+  var data = JSON.stringify(companiesAtt);
+  var fs = require('fs');
+  fs.writeFile('companiesAtt-before-results.json', data, (err) => {
+  if (err) {
+    throw err;
+  }
+  console.log("JSON data is saved.");
+  });
+
+}
 
    async connect() {
     this.browser = await puppeteer.launch({
