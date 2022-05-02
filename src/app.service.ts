@@ -447,7 +447,7 @@ console.log(valueSearch)
 }
 var data = JSON.stringify(companiesAtt);
 var fs = require('fs');
-fs.writeFile('companiesAtt.json', data, (err) => {
+fs.writeFile('testes-codigo.json', data, (err) => {
 if (err) {
     throw err;
 }
@@ -536,23 +536,36 @@ console.log("JSON data is saved.");
  async allOtherData() {
   let failList = []
   let companiesAtt = [{}];
+  var valueSearch;
+  var faturamentoMedio 
+  var capitalInstalacao 
+  var taxaFranquia 
+  var totalArea 
+  var totalFuncionarios 
+  var taxaPropaganda 
+  var taxaRoyalties 
+  var propaganda
+  var royalties
+  var taxasIncidemSobre
   this.content = fs.readFileSync('empresas-presentes-evento.txt','utf8')
   this.content = this.content.split("\n") 
   this.page = await this.browser.newPage(); 
   for(var i = 0; i < this.content.length ; i++){
-    var valueSearch;
-    var faturamentoMedio = 0;
-    var capitalInstalacao = 0;
-    var taxaFranquia = 0;
-    var totalArea = 0;
-    var totalFuncionarios = 0;
-    var taxaPropaganda = 0;
-    var taxaRoyalties = 0;
-    var propaganda
-    var royalties
-    var taxasIncidemSobre
+    
     valueSearch = this.content[i];
+    faturamentoMedio = ""
+    capitalInstalacao = ""
+    taxaFranquia = ""
+    totalArea = ""
+    totalFuncionarios = ""
+    taxaPropaganda = ""
+    taxaRoyalties = ""
+    propaganda = ""
+    royalties = ""
+    taxasIncidemSobre = ""
+
     try{
+
     await this.page.goto('https://franquias.portaldofranchising.com.br/busca');
     await new Promise(resolve => {setTimeout(resolve, 3500)});
     await this.page.type("#franchise-results > div > div:nth-child(2) > div > div > input", `${valueSearch}`);
@@ -590,158 +603,159 @@ console.log("JSON data is saved.");
   console.log("\n")
   console.log("1 - ERRO")
   console.log(valueSearch)
+  
+  let textInvestment = await this.page.$$eval('.p-title-default',
+  divs => divs.map(({ innerText }) => innerText));
+  if ((textInvestment[textInvestment.length - 1]) == "SELO DE EXCELÊNCIA EM FRANCHISING"){
+    textInvestment.pop()
+  }
+
+ // console.log(textInvestment)
+  let valueInvestment = await this.page.$$eval('.bold-default',
+  divs => divs.map(({ innerText }) => innerText));
+  let minInvestment = valueInvestment[0].split('a partir de R$')
+
+
+  let sector = await this.page.$$eval('#leftColMinisite > div > div > div.tab-content.about > span',
+  divs => divs.map(({ innerText }) => innerText));
+
+  let infoCompany = await this.page.$$eval("#leftColMinisite > div > div > div:nth-child(2) > div > div:nth-child(1) > p",
+  divs => divs.map(({ innerText }) => innerText));
+
+  let allInfo = await this.page.$$eval('#bold',
+  divs => divs.map(({ innerText }) => innerText));
+
+  let moreInfo = await this.page.$$eval('p.content',
+  divs => divs.map(({ innerText }) => innerText));
+
+  if (infoCompany[0] == "Investimento para um Quiosque"){
+    var typeCompany = "quiosque"
+    capitalInstalacao = allInfo[0]
+    taxaFranquia = allInfo[1]
+    if (moreInfo[1].includes("R$")){
+      faturamentoMedio = moreInfo[1]
+
+      totalArea = moreInfo[4]
+
+      totalFuncionarios = moreInfo[5]
+
+      propaganda = moreInfo[6]
+
+      royalties = moreInfo[8]
+
+      taxasIncidemSobre = moreInfo[7]
+    } else {
+      totalArea = moreInfo[3]
+
+      totalFuncionarios = moreInfo[4]
+
+      propaganda = moreInfo[5]
+
+      royalties = moreInfo[7]
+      taxasIncidemSobre = moreInfo[6]
+
+      // totalArea = moreInfo[3].split('m²') 
+      // totalArea = totalArea[0].split('\n')
+      // totalArea = totalArea[1].split(' ')
+
+      // totalFuncionarios = moreInfo[4].split('\n')
+      // totalFuncionarios = totalFuncionarios[1].split('de ')
+      // totalFuncionarios = totalFuncionarios[1].split(' a ')
+
+      // propaganda = moreInfo[5].split('\nde ')
+      // propaganda = propaganda[0].split('\n')
+      // taxaPropaganda = propaganda[1]
+
+      // royalties = moreInfo[7].split('\nde ')
+      // royalties = royalties[0].split('\n')
+      // taxasIncidemSobre = moreInfo[6].split('\n')
+      // taxasIncidemSobre = taxasIncidemSobre[1].split('                                        ')
+    }
+
+  } else if (infoCompany[0] == "Investimento para uma Loja"){
+    var typeCompany = "loja"
+    capitalInstalacao = allInfo[0]
+    taxaFranquia = allInfo[1]
+    if (moreInfo[1].includes("R$")){
+      faturamentoMedio = moreInfo[1]
+
+      totalArea = moreInfo[4]
+
+      totalFuncionarios = moreInfo[5]
+
+      propaganda = moreInfo[6]
+      console.log(moreInfo[6])
+      royalties = moreInfo[8]
+      taxasIncidemSobre = moreInfo[7]
+
+      // taxasIncidemSobre = moreInfo[7].split('\n')
+      // taxasIncidemSobre = taxasIncidemSobre[1].split('                                        ')
+      console.log(faturamentoMedio,totalArea,totalFuncionarios,propaganda,taxasIncidemSobre)
+
+    } else {
+      totalArea = moreInfo[3]
+
+      totalFuncionarios = moreInfo[4]
+
+      propaganda = moreInfo[5]
+
+      royalties = moreInfo[7]
+
+      taxasIncidemSobre = moreInfo[6]
+    }
+  }
+
+  if (textInvestment.length == 4) {
+    companiesAtt.push({
+      "company": valueSearch,
+      "typeCompany": typeCompany,
+      "sector": sector[0],
+      "investmentStart": minInvestment[1],
+      "returnTime": valueInvestment[1],
+      "totalUnits": valueInvestment[2],
+      "totalFuncionarios": totalFuncionarios,
+      "totalArea": totalArea,
+      "faturamentoMedio": faturamentoMedio,
+      "capitalInstalacao": capitalInstalacao,
+      "taxaPropaganda": propaganda,
+      "taxaRoyalties": royalties,
+      "taxasIncidemSobre": taxasIncidemSobre,
+      "personalidade": 1
+    })
+  }
+
+  else if((textInvestment.length == 5)){
+    companiesAtt.push({
+      "company": valueSearch,
+      "typeCompany": typeCompany,
+      "sector": sector[0],
+      "investmentStart": minInvestment[1],
+      "returnTime": valueInvestment[1],
+      "totalUnits": valueInvestment[3],
+      "totalFuncionarios": totalFuncionarios,
+      "totalArea": totalArea,
+      "faturamentoMedio": faturamentoMedio,
+      "capitalInstalacao": capitalInstalacao,
+      "taxaPropaganda": propaganda,
+      "taxaRoyalties": royalties,
+      "taxasIncidemSobre": taxasIncidemSobre,
+      "personalidade": 1
+    })
+  }
+  console.log('\n')
+  console.log(valueSearch,sector[0],minInvestment,valueInvestment,totalFuncionarios,totalArea)
+  console.log('\n')
 }
 
-  try{
+  // try{
 
 
-    let textInvestment = await this.page.$$eval('.p-title-default',
-    divs => divs.map(({ innerText }) => innerText));
-    if ((textInvestment[textInvestment.length - 1]) == "SELO DE EXCELÊNCIA EM FRANCHISING"){
-      textInvestment.pop()
-    }
-
-   // console.log(textInvestment)
-    let valueInvestment = await this.page.$$eval('.bold-default',
-    divs => divs.map(({ innerText }) => innerText));
-    let minInvestment = valueInvestment[0].split('a partir de R$')
-
-
-    let sector = await this.page.$$eval('#leftColMinisite > div > div > div.tab-content.about > span',
-    divs => divs.map(({ innerText }) => innerText));
-
-    let infoCompany = await this.page.$$eval("#leftColMinisite > div > div > div:nth-child(2) > div > div:nth-child(1) > p",
-    divs => divs.map(({ innerText }) => innerText));
-
-    let allInfo = await this.page.$$eval('#bold',
-    divs => divs.map(({ innerText }) => innerText));
-
-    let moreInfo = await this.page.$$eval('p.content',
-    divs => divs.map(({ innerText }) => innerText));
-
-    if (infoCompany[0] == "Investimento para um Quiosque"){
-      var typeCompany = "quiosque"
-      capitalInstalacao = allInfo[0]
-      taxaFranquia = allInfo[1]
-      if (moreInfo[1].includes("R$")){
-        faturamentoMedio = moreInfo[1]
-
-        totalArea = moreInfo[4]
-
-        totalFuncionarios = moreInfo[5]
-
-        propaganda = moreInfo[6]
-
-        royalties = moreInfo[8]
-
-        taxasIncidemSobre = moreInfo[7]
-      } else {
-        totalArea = moreInfo[3]
-
-        totalFuncionarios = moreInfo[4]
-
-        propaganda = moreInfo[5]
-
-        royalties = moreInfo[7]
-        taxasIncidemSobre = moreInfo[6]
-
-        // totalArea = moreInfo[3].split('m²') 
-        // totalArea = totalArea[0].split('\n')
-        // totalArea = totalArea[1].split(' ')
-
-        // totalFuncionarios = moreInfo[4].split('\n')
-        // totalFuncionarios = totalFuncionarios[1].split('de ')
-        // totalFuncionarios = totalFuncionarios[1].split(' a ')
-
-        // propaganda = moreInfo[5].split('\nde ')
-        // propaganda = propaganda[0].split('\n')
-        // taxaPropaganda = propaganda[1]
-
-        // royalties = moreInfo[7].split('\nde ')
-        // royalties = royalties[0].split('\n')
-        // taxasIncidemSobre = moreInfo[6].split('\n')
-        // taxasIncidemSobre = taxasIncidemSobre[1].split('                                        ')
-      }
-
-    } else if (infoCompany[0] == "Investimento para uma Loja"){
-      var typeCompany = "loja"
-      capitalInstalacao = allInfo[0]
-      taxaFranquia = allInfo[1]
-      if (moreInfo[1].includes("R$")){
-        faturamentoMedio = moreInfo[1]
-
-        totalArea = moreInfo[4]
-
-        totalFuncionarios = moreInfo[5]
-
-        propaganda = moreInfo[6]
-        console.log(moreInfo[6])
-        royalties = moreInfo[8]
-        taxasIncidemSobre = moreInfo[7]
-
-        // taxasIncidemSobre = moreInfo[7].split('\n')
-        // taxasIncidemSobre = taxasIncidemSobre[1].split('                                        ')
-        console.log(faturamentoMedio,totalArea,totalFuncionarios,propaganda,taxasIncidemSobre)
-
-      } else {
-        totalArea = moreInfo[3]
-
-        totalFuncionarios = moreInfo[4]
-
-        propaganda = moreInfo[5]
-
-        royalties = moreInfo[7]
-
-        taxasIncidemSobre = moreInfo[6]
-      }
-    }
-
-    if (textInvestment.length == 4) {
-      companiesAtt.push({
-        "company": valueSearch,
-        "typeCompany": typeCompany,
-        "sector": sector[0],
-        "investmentStart": minInvestment[1],
-        "returnTime": valueInvestment[1],
-        "totalUnits": valueInvestment[2],
-        "totalFuncionarios": totalFuncionarios,
-        "totalArea": totalArea,
-        "faturamentoMedio": faturamentoMedio,
-        "capitalInstalacao": capitalInstalacao,
-        "taxaPropaganda": propaganda,
-        "taxaRoyalties": royalties,
-        "taxasIncidemSobre": taxasIncidemSobre,
-        "personalidade": 1
-      })
-    }
-
-    else if((textInvestment.length == 5)){
-      companiesAtt.push({
-        "company": valueSearch,
-        "typeCompany": typeCompany,
-        "sector": sector[0],
-        "investmentStart": minInvestment[1],
-        "returnTime": valueInvestment[1],
-        "totalUnits": valueInvestment[3],
-        "totalFuncionarios": totalFuncionarios,
-        "totalArea": totalArea,
-        "faturamentoMedio": faturamentoMedio,
-        "capitalInstalacao": capitalInstalacao,
-        "taxaPropaganda": propaganda,
-        "taxaRoyalties": royalties,
-        "taxasIncidemSobre": taxasIncidemSobre,
-        "personalidade": 1
-      })
-    }
-    console.log('\n')
-    console.log(valueSearch,sector[0],minInvestment,valueInvestment,totalFuncionarios,totalArea)
-    console.log('\n')
-  }catch(e){
-    console.log(e)
-    console.log("\n")
-    console.log("2 - ERRO")
-    console.log(valueSearch)
-  }
+  // }catch(e){
+  //   console.log(e)
+  //   console.log("\n")
+  //   console.log("2 - ERRO")
+  //   console.log(valueSearch)
+  // }
  }catch(e){
   console.log(e)
   console.log('\n')
@@ -750,7 +764,7 @@ console.log("JSON data is saved.");
   failList.push(valueSearch)
 }} 
  var data = JSON.stringify(companiesAtt);
-fs.writeFile('companiesAtt-before.json', data, (err) => {
+fs.writeFile('testes-codigo.json', data, (err) => {
   if (err) {
       throw err;
   }
